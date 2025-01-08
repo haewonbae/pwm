@@ -1,0 +1,81 @@
+library IEEE;
+use IEEE.std_logic_1164.all;
+use IEEE.numeric_std.all;
+
+entity tb_pwm is
+end tb_pwm;
+
+architecture Behavioral of tb_pwm is
+    -- Declare signals for the DUT (Device Under Test)
+    signal i_clk       : STD_LOGIC := '0';
+    signal i_rst       : STD_LOGIC := '1';
+    signal i_speed_now : STD_LOGIC_VECTOR (7 downto 0);
+    signal i_th_speed  : STD_LOGIC_VECTOR (7 downto 0);
+    signal i_target    : STD_LOGIC_VECTOR (7 downto 0);                        
+    signal o_pwm       : STD_LOGIC;
+
+    -- Clock period definition
+    constant clk_period : time := 10 ns;  -- Adjust as necessary
+
+begin
+    -- Instantiate the DUT
+    uut: entity work.pwm
+        Port map (
+            i_clk       => i_clk,
+            i_rst       => i_rst,
+            i_speed_now => i_speed_now,
+            i_th_speed  => i_th_speed,
+            i_target    => i_target,
+            o_pwm       => o_pwm
+        );
+
+    -- Generate clock signal
+    clk_process: process
+    begin
+        while true loop
+            i_clk <= '0';
+            wait for clk_period / 2;
+            i_clk <= '1';
+            wait for clk_period / 2;
+        end loop;
+    end process;
+
+    -- Stimulus process
+    stim_proc: process
+    begin
+        -- Hold reset state for a while
+        i_rst <= '0';  -- Active low reset
+        wait for 20 ns;
+        i_rst <= '1';  -- Release reset
+
+        -- Test case 1: Initial conditions
+        i_speed_now <= "00000000"; -- 0
+        i_th_speed  <= "00101000"; -- 40
+        i_target    <= "01100100"; -- 100
+        wait for 50 ns;
+
+        -- Test case 2: Speed now less than threshold
+        i_speed_now <= "00000100"; -- 4
+        wait for 50 ns;
+
+        -- Test case 3: Speed now equals threshold
+        i_speed_now <= "00101000"; -- 40
+        wait for 50 ns;
+
+        -- Test case 4: Speed now greater than threshold but less than target
+        i_speed_now <= "01000000"; -- 64
+        wait for 50 ns;
+
+        -- Test case 5: Speed now reaches target
+        i_speed_now <= "01100100"; -- 100
+        wait for 50 ns;
+
+        -- Test case 6: Speed now exceeds target
+        i_speed_now <= "10000000"; -- 128
+        wait for 50 ns;
+
+        -- End simulation
+        wait;
+    end process;
+
+end Behavioral;
